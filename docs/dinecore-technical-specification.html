@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DineCore — Implementation Technical Specification</title>
+  <style>
+    :root {
+      --bg: #f4f0e8;
+      --paper: #fbf8f3;
+      --ink: #1d1a16;
+      --muted: #5e584e;
+      --line: #e0d6c8;
+      --accent: #8c3b2a;
+      --accent-soft: #f3e4dc;
+      --ok: #1f5c45;
+      --code: #efe8dc;
+      --shadow: 0 1px 0 rgba(29, 26, 22, 0.04);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 17px/1.55 "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+    }
+    a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 820px);
+      gap: 48px;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 40px 28px 80px;
+    }
+    nav {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    nav p {
+      margin: 0 0 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    nav ol { list-style: none; margin: 0; padding: 0; }
+    nav a {
+      display: block;
+      padding: 5px 0;
+      color: var(--ink);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      padding-left: 10px;
+    }
+    nav a:hover { border-left-color: var(--accent); color: var(--accent); }
+    header.hero {
+      margin-bottom: 28px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .kicker {
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 8px;
+    }
+    h1 { font-size: 40px; line-height: 1.1; font-weight: 600; margin: 0 0 12px; }
+    h2 {
+      font-size: 26px;
+      font-weight: 600;
+      margin: 42px 0 12px;
+      padding-top: 8px;
+    }
+    h3 { font-size: 19px; font-weight: 600; margin: 26px 0 8px; }
+    p { margin: 0 0 12px; }
+    .lede { font-size: 19px; color: var(--muted); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      font-size: 14.5px;
+      line-height: 1.4;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    th { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    code, pre {
+      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.86em;
+    }
+    code { background: var(--code); padding: 0.1em 0.35em; border-radius: 3px; }
+    pre {
+      background: #241f1b;
+      color: #f6f0e6;
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow: auto;
+      line-height: 1.45;
+    }
+    pre code { background: transparent; padding: 0; color: inherit; }
+    ul, ol { margin: 0 0 14px; padding-left: 1.2em; }
+    li { margin: 4px 0; }
+    .meta {
+      width: 100%;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      font-size: 14px;
+    }
+    .callout {
+      background: var(--accent-soft);
+      border-left: 3px solid var(--accent);
+      padding: 12px 14px;
+      margin: 14px 0 18px;
+    }
+    .phase {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px 16px 12px;
+      margin: 14px 0;
+    }
+    .phase h3 { margin-top: 14px; }
+    .done { color: var(--ok); font-family: "Avenir Next", "Segoe UI", sans-serif; font-size: 14.5px; }
+    footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      font-size: 13px;
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; gap: 12px; padding: 20px 16px 48px; }
+      nav { position: static; }
+      h1 { font-size: 32px; }
+    }
+    @media print {
+      nav { display: none; }
+      .layout { display: block; max-width: none; }
+      body { background: white; }
+      pre { white-space: pre-wrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav>
+      <p>Contents</p>
+      <ol>
+        <li><a href="#purpose">1. Purpose</a></li>
+        <li><a href="#decisions">2. Decisions</a></li>
+        <li><a href="#repo">3. Repository</a></li>
+        <li><a href="#request">4. Request path</a></li>
+        <li><a href="#access">5. Access</a></li>
+        <li><a href="#services">6. Services</a></li>
+        <li><a href="#events">7. Events</a></li>
+        <li><a href="#data">8. Persistence</a></li>
+        <li><a href="#errors">9. Errors</a></li>
+        <li><a href="#phases">10. Build order</a></li>
+        <li><a href="#tests">11. Tests</a></li>
+        <li><a href="#path">12. Happy path</a></li>
+        <li><a href="#risks">13. Risks</a></li>
+        <li><a href="#sources">14. Source notes</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <header class="hero">
+        <p class="kicker">Build specification · v1.0 · 28 September 2026</p>
+        <h1>DineCore implementation technical specification</h1>
+        <p class="lede">What must be built to turn the design notes into a running Java microservices backend. This document supersedes the five source notes where they disagree.</p>
+        <table class="meta">
+          <tr><th>Product</th><td>DineCore, multi-branch restaurant operating system</td></tr>
+          <tr><th>Audience</th><td>Engineers implementing the Java backend</td></tr>
+          <tr><th>Companion</th><td><code>docs/dinecore-technical-specification.md</code></td></tr>
+        </table>
+      </header>
+
+      <section id="purpose">
+        <h2>1. What this version is</h2>
+        <p>DineCore v1 is a set of Java services behind one API gateway. A restaurant group has many branches. Each branch is a tenant. Waiters take orders, the kitchen sees them immediately, and billing closes the cheque for that branch only.</p>
+        <p>Design load, not a scaling project: <strong>5–10 branches</strong>, about <strong>30 concurrent waiters per branch</strong>. Stateless services, correct indexes, and a message bus are enough. No sharding, no Kubernetes, no mobile client in this version.</p>
+        <h3>In scope</h3>
+        <ul>
+          <li>Organization (restaurant group) and branches</li>
+          <li>Users and JWT login with four roles</li>
+          <li>Shared menu with per-branch price and availability</li>
+          <li>Tables, orders, and a kitchen live channel</li>
+          <li>Cheques, split payments recorded as cash or card, and a shift Z-report</li>
+          <li>Tenant isolation on every branch-owned row</li>
+        </ul>
+        <h3>Out of scope</h3>
+        <ul>
+          <li>Waiter offline queue (SQLite / IndexedDB)</li>
+          <li>Inventory, recipes, and stock deduction</li>
+          <li>Analytics service and corporate dashboards</li>
+          <li>Card-network or payment-gateway integration</li>
+          <li>Public self-signup and subscription billing</li>
+          <li>Kubernetes, service mesh, and multi-region deployment</li>
+        </ul>
+      </section>
+
+      <section id="decisions">
+        <h2>2. Decisions locked for the build</h2>
+        <p>The source notes leave several choices open. These are now fixed.</p>
+        <table>
+          <thead><tr><th>Topic</th><th>Decision</th></tr></thead>
+          <tbody>
+            <tr><td>Language</td><td>Java 21</td></tr>
+            <tr><td>Application framework</td><td>Spring Boot 4.1.x</td></tr>
+            <tr><td>Cloud components</td><td>Spring Cloud 2025.1.x Oakwood (Gateway only)</td></tr>
+            <tr><td>Build</td><td>One Maven multi-module repository</td></tr>
+            <tr><td>Database</td><td>PostgreSQL 16. One server. One schema per service</td></tr>
+            <tr><td>Migrations</td><td>Flyway, owned by the service that owns the schema</td></tr>
+            <tr><td>Cache</td><td>Redis 7 for the branch menu only</td></tr>
+            <tr><td>Messages</td><td>Apache Kafka. RabbitMQ is not used</td></tr>
+            <tr><td>Live updates</td><td>Spring WebSocket with STOMP, inside <code>order-service</code></td></tr>
+            <tr><td>Auth</td><td>Stateless JWT access tokens. No refresh token in v1</td></tr>
+            <tr><td>Money</td><td><code>BigDecimal</code> scale 2. Currency lives on the branch</td></tr>
+            <tr><td>Time</td><td>Store UTC. Business day uses the branch timezone</td></tr>
+            <tr><td>Identifiers</td><td>UUID</td></tr>
+            <tr><td>API</td><td>JSON over HTTP, prefix <code>/api/v1</code></td></tr>
+            <tr><td>Local runtime</td><td>Docker Compose: Postgres, Redis, Kafka</td></tr>
+            <tr><td>Package root</td><td><code>com.dinecore</code></td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <strong>Data ownership.</strong> Each service owns its schema and is the only writer of its tables. Services do not share a Hibernate session or a single <code>tenantFilter</code>. The sample <code>HibernateTenantAspect</code> in the notes is not the implementation. It uses a Hibernate 5 filter API, a pointcut that matches one package level, and a thread-local that will not follow Kafka listeners.
+        </div>
+        <p>Tenant isolation inside a service is a repository rule: every branch-owned query includes <code>tenant_id</code> from the request context. A test must prove branch A cannot read branch B.</p>
+        <p>A branch is the tenant. The dish catalog belongs to the <strong>organization</strong>, because every branch sells from the same card and then overrides price or availability. <code>tenant_id</code> on an order is the branch. <code>organization_id</code> on a dish is the group.</p>
+      </section>
+
+      <section id="repo">
+        <h2>3. Repository to create</h2>
+        <pre><code>dine-core-platform/
+  pom.xml
+  docker-compose.yml
+  dinecore-common/            # events, error model, header names — plain Java
+  dinecore-tenant-web/        # servlet filter + ThreadLocal for MVC services
+  gateway-service/            # WebFlux. Own tenant filter. No JPA
+  tenant-service/
+  menu-service/
+  order-service/
+  billing-service/</code></pre>
+        <p><code>dinecore-common</code> must not depend on Spring Web. The gateway is reactive. The four business services are Spring MVC. Sharing one web starter would force the wrong stack onto one of them.</p>
+        <table>
+          <thead><tr><th>Process</th><th>Port</th></tr></thead>
+          <tbody>
+            <tr><td>gateway-service</td><td>8080</td></tr>
+            <tr><td>tenant-service</td><td>8081</td></tr>
+            <tr><td>menu-service</td><td>8082</td></tr>
+            <tr><td>order-service</td><td>8083</td></tr>
+            <tr><td>billing-service</td><td>8084</td></tr>
+            <tr><td>PostgreSQL</td><td>5432</td></tr>
+            <tr><td>Redis</td><td>6379</td></tr>
+            <tr><td>Kafka</td><td>9092</td></tr>
+          </tbody>
+        </table>
+        <p>Schemas: <code>tenant</code>, <code>menu</code>, <code>orders</code>, <code>billing</code>.</p>
+      </section>
+
+      <section id="request">
+        <h2>4. Request path</h2>
+        <ol>
+          <li>The client calls the gateway with <code>Authorization: Bearer &lt;jwt&gt;</code> and, on branch-scoped calls, <code>X-Tenant-ID</code>.</li>
+          <li>The gateway checks the signature and expiry.</li>
+          <li>For <code>WAITER</code>, <code>KITCHEN</code>, and <code>BRANCH_ADMIN</code>, <code>X-Tenant-ID</code> must equal the <code>tenant_id</code> claim. A mismatch is <code>403</code>.</li>
+          <li><code>SUPER_ADMIN</code> may pass any branch id in <code>X-Tenant-ID</code> when acting on one branch.</li>
+          <li>The gateway forwards the header. It does not open a database.</li>
+          <li>The target service copies <code>X-Tenant-ID</code> into a request-scoped context and clears it when the request ends, including on failure.</li>
+          <li>Repositories read that context. They never trust a tenant id in the JSON body.</li>
+        </ol>
+        <p>Login (<code>POST /api/v1/auth/login</code>) is the only public route.</p>
+      </section>
+
+      <section id="access">
+        <h2>5. Identity and access</h2>
+        <table>
+          <thead><tr><th>Role</th><th>May do</th></tr></thead>
+          <tbody>
+            <tr><td><code>SUPER_ADMIN</code></td><td>Create organizations, branches, and users. Read any branch by setting the header</td></tr>
+            <tr><td><code>BRANCH_ADMIN</code></td><td>Settings, menu overrides, staff in their branch, cancel a kitchen order, close a shift</td></tr>
+            <tr><td><code>WAITER</code></td><td>Tables and orders for their branch, request and take payment</td></tr>
+            <tr><td><code>KITCHEN</code></td><td>Read the kitchen queue and move an item to ready. No bills, no menu edits</td></tr>
+          </tbody>
+        </table>
+        <p>JWT claims: <code>sub</code> (user id), <code>role</code>, <code>organization_id</code>, <code>tenant_id</code> (absent for super admin), <code>exp</code>.</p>
+        <p>Passwords are stored as BCrypt hashes. Login returns the access token, expiry, role, organization id, and tenant id.</p>
+      </section>
+
+      <section id="services">
+        <h2>6. Service work</h2>
+
+        <h3>6.1 gateway-service</h3>
+        <p>No database. Routes:</p>
+        <table>
+          <thead><tr><th>Prefix</th><th>Downstream</th></tr></thead>
+          <tbody>
+            <tr><td><code>/api/v1/auth/**</code>, <code>/api/v1/organizations/**</code>, <code>/api/v1/branches/**</code>, <code>/api/v1/users/**</code>, <code>/api/v1/settings/**</code>, <code>/api/v1/shifts/**</code></td><td>tenant-service</td></tr>
+            <tr><td><code>/api/v1/categories/**</code>, <code>/api/v1/dishes/**</code>, <code>/api/v1/menu/**</code></td><td>menu-service</td></tr>
+            <tr><td><code>/api/v1/tables/**</code>, <code>/api/v1/orders/**</code>, <code>/ws/**</code></td><td>order-service</td></tr>
+            <tr><td><code>/api/v1/cheques/**</code>, <code>/api/v1/reports/**</code></td><td>billing-service</td></tr>
+          </tbody>
+        </table>
+        <p>Also: CORS for a local admin origin, propagate <code>X-Request-Id</code>, and refuse branch-scoped calls that omit <code>X-Tenant-ID</code>.</p>
+
+        <h3>6.2 tenant-service</h3>
+        <p>Schema <code>tenant</code>.</p>
+        <table>
+          <thead><tr><th>Entity</th><th>Fields that matter</th></tr></thead>
+          <tbody>
+            <tr><td>Organization</td><td>id, name, code, status</td></tr>
+            <tr><td>Branch</td><td>id (this is the tenant id), organization_id, name, code, currency, timezone, status</td></tr>
+            <tr><td>BranchSettings</td><td>branch_id, tax_rate, service_charge_pct, receipt_footer_text</td></tr>
+            <tr><td>User</td><td>id, organization_id, branch_id (null for super admin), username, password_hash, role, status</td></tr>
+            <tr><td>Shift</td><td>id, branch_id, user_id, opened_at, closed_at</td></tr>
+          </tbody>
+        </table>
+        <table>
+          <thead><tr><th>Method</th><th>Path</th><th>Who</th></tr></thead>
+          <tbody>
+            <tr><td>POST</td><td><code>/api/v1/auth/login</code></td><td>public</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/organizations</code></td><td>super admin</td></tr>
+            <tr><td>GET</td><td><code>/api/v1/organizations</code></td><td>super admin</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/branches</code></td><td>super admin</td></tr>
+            <tr><td>GET</td><td><code>/api/v1/branches</code></td><td>super admin, or branch admin (own org)</td></tr>
+            <tr><td>GET</td><td><code>/api/v1/settings</code></td><td>branch roles, current tenant</td></tr>
+            <tr><td>PUT</td><td><code>/api/v1/settings</code></td><td>branch admin</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/users</code></td><td>super admin, or branch admin for waiter and kitchen in their branch</td></tr>
+            <tr><td>GET</td><td><code>/api/v1/users</code></td><td>same scope as create</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/shifts/open</code></td><td>waiter, kitchen, branch admin</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/shifts/close</code></td><td>the user who opened it, or branch admin</td></tr>
+          </tbody>
+        </table>
+
+        <h3>6.3 menu-service</h3>
+        <p>Schema <code>menu</code>. Catalog is organization-wide. Overrides are per branch.</p>
+        <table>
+          <thead><tr><th>Entity</th><th>Fields that matter</th></tr></thead>
+          <tbody>
+            <tr><td>Category</td><td>id, organization_id, name, sort_order, active</td></tr>
+            <tr><td>Dish</td><td>id, organization_id, category_id, name, description, base_price, active</td></tr>
+            <tr><td>Modifier</td><td>id, dish_id, name, price_delta</td></tr>
+            <tr><td>BranchMenuOverride</td><td>branch_id, dish_id, custom_price (null means base price), available</td></tr>
+          </tbody>
+        </table>
+        <p>Effective price = <code>custom_price</code> when set, otherwise <code>base_price</code>. A dish with <code>available = false</code> is hidden from the waiter menu.</p>
+        <table>
+          <thead><tr><th>Method</th><th>Path</th><th>Who</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td><code>/api/v1/menu</code></td><td>any branch role. Resolved menu for <code>X-Tenant-ID</code></td></tr>
+            <tr><td>POST / PATCH</td><td><code>/api/v1/categories</code>, <code>/api/v1/dishes</code>, <code>/api/v1/dishes/{id}/modifiers</code></td><td>super admin</td></tr>
+            <tr><td>PUT</td><td><code>/api/v1/dishes/{id}/override</code></td><td>branch admin. Body: custom price and available flag</td></tr>
+          </tbody>
+        </table>
+        <p>Cache: Redis key <code>menu:branch:{branchId}</code>, TTL 2 hours. Delete that key when this branch’s override changes. When a dish or category changes, delete every cached key for branches of that organization. The waiter menu read path uses the cache. A cache miss loads from Postgres and fills Redis.</p>
+
+        <h3>6.4 order-service</h3>
+        <p>Schema <code>orders</code>.</p>
+        <table>
+          <thead><tr><th>Entity</th><th>Fields that matter</th></tr></thead>
+          <tbody>
+            <tr><td>DiningTable</td><td>id, branch_id, table_number, seats, status</td></tr>
+            <tr><td>Order</td><td>id, branch_id, table_id, waiter_id, status, note</td></tr>
+            <tr><td>OrderItem</td><td>id, order_id, dish_id, name_snapshot, unit_price, quantity, modifiers_json, status</td></tr>
+          </tbody>
+        </table>
+        <p>Table status: <code>AVAILABLE</code>, <code>OCCUPIED</code>, <code>RESERVED</code>, <code>PAYMENT_IN_PROGRESS</code>.</p>
+        <table>
+          <thead><tr><th>From</th><th>To</th><th>Who</th></tr></thead>
+          <tbody>
+            <tr><td>—</td><td><code>DRAFT</code></td><td>waiter opens a table</td></tr>
+            <tr><td><code>DRAFT</code></td><td><code>SUBMITTED</code></td><td>waiter sends the order</td></tr>
+            <tr><td><code>SUBMITTED</code></td><td><code>SENT_TO_KITCHEN</code></td><td>service, in the same action as a successful publish</td></tr>
+            <tr><td><code>SENT_TO_KITCHEN</code></td><td><code>READY</code></td><td>kitchen, when every item is ready</td></tr>
+            <tr><td><code>READY</code></td><td><code>SERVED</code></td><td>waiter</td></tr>
+            <tr><td><code>DRAFT</code> or <code>SUBMITTED</code></td><td><code>CANCELLED</code></td><td>waiter or branch admin</td></tr>
+            <tr><td><code>SENT_TO_KITCHEN</code></td><td><code>CANCELLED</code></td><td>branch admin only</td></tr>
+          </tbody>
+        </table>
+        <p>Item status follows the kitchen: <code>QUEUED</code>, <code>READY</code>, <code>CANCELLED</code>. Opening an order on an available table sets the table to <code>OCCUPIED</code>. Price on the item is copied from the menu at submit time and does not change if the menu later changes.</p>
+        <p>Menu prices are read from <code>menu-service</code> over HTTP at submit time. <code>order-service</code> does not query the <code>menu</code> schema.</p>
+        <table>
+          <thead><tr><th>Method</th><th>Path</th><th>Who</th></tr></thead>
+          <tbody>
+            <tr><td>GET / POST</td><td><code>/api/v1/tables</code></td><td>branch admin creates. Waiter reads</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/orders</code></td><td>waiter. Body: table id</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/orders/{id}/items</code></td><td>waiter, while <code>DRAFT</code></td></tr>
+            <tr><td>POST</td><td><code>/api/v1/orders/{id}/submit</code></td><td>waiter</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/orders/{id}/cancel</code></td><td>as in the status table</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/orders/{id}/items/{itemId}/ready</code></td><td>kitchen</td></tr>
+            <tr><td>POST</td><td><code>/api/v1/orders/{id}/served</code></td><td>waiter</td></tr>
+            <tr><td>GET</td><td><code>/api/v1/orders?status=</code></td><td>branch roles, filtered by role need</td></tr>
+          </tbody>
+        </table>
+        <p>STOMP endpoint: <code>/ws</code>.</p>
+        <table>
+          <thead><tr><th>Subscribe</th><th>Payload</th></tr></thead>
+          <tbody>
+            <tr><td><code>/topic/branch/{branchId}/kitchen</code></td><td>order submitted, item ready, order cancelled</td></tr>
+            <tr><td><code>/topic/branch/{branchId}/tables</code></td><td>table status</td></tr>
+            <tr><td><code>/topic/branch/{branchId}/waiter/{waiterId}</code></td><td>ready and served notices for that waiter</td></tr>
+          </tbody>
+        </table>
+        <p>The connect handshake requires the same JWT. A session may subscribe only to its own branch. Orders are created with HTTP so they are transactional. The socket is the notification channel.</p>
+        <p>On submit, after the order is stored, publish <code>OrderSubmitted</code> and push the kitchen topic. If Kafka publish fails, the submit fails and the order stays <code>DRAFT</code>.</p>
+
+        <h3>6.5 billing-service</h3>
+        <p>Schema <code>billing</code>. Consumes order events. Does not read the <code>orders</code> tables.</p>
+        <table>
+          <thead><tr><th>Entity</th><th>Fields that matter</th></tr></thead>
+          <tbody>
+            <tr><td>Cheque</td><td>id, branch_id, order_id, table_id, waiter_id, shift_id, status, subtotal, tax, service_charge, discount, tip, total</td></tr>
+            <tr><td>ChequeLine</td><td>cheque_id, dish name, quantity, unit price, line total</td></tr>
+            <tr><td>Payment</td><td>id, cheque_id, method (<code>CASH</code> or <code>CARD</code>), amount</td></tr>
+            <tr><td>ProcessedEvent</td><td>event_id unique</td></tr>
+            <tr><td>ZReport</td><td>id, branch_id, shift_id, business_date, totals by method, tax, tips</td></tr>
+          </tbody>
+        </table>
+        <p>Cheque status: <code>OPEN</code>, <code>PAID</code>, <code>VOID</code>.</p>
+        <ol>
+          <li>Consume <code>OrderServed</code>. Create an <code>OPEN</code> cheque from the event payload. Ignore a duplicate <code>event_id</code>.</li>
+          <li>Waiter requests the cheque. Billing asks order-service to set the table to <code>PAYMENT_IN_PROGRESS</code>. A second payment request for the same order returns the existing open cheque.</li>
+          <li>Record payments until the paid sum equals the total. Then mark <code>PAID</code>, publish <code>ChequePaid</code>, and tell order-service to set the order <code>CLOSED</code> and the table <code>AVAILABLE</code>.</li>
+          <li>Partial payments are allowed. Overpayment is rejected.</li>
+          <li>Void is branch admin only, and only before any payment.</li>
+        </ol>
+        <p>Totals: subtotal from lines, tax = subtotal × branch tax rate, service charge = subtotal × service charge percent, total = subtotal + tax + service charge − discount + tip. Rates come from tenant-service settings for that branch. Round half-up to 2 decimal places.</p>
+        <p>Z-report: <code>GET /api/v1/reports/z?shiftId=</code> for the shift’s waiter or a branch admin. It sums paid cheques whose <code>shift_id</code> is that shift. The waiter’s open shift id is sent when the cheque is requested. Billing does not read the <code>tenant</code> schema to discover the shift.</p>
+      </section>
+
+      <section id="events">
+        <h2>7. Events</h2>
+        <table>
+          <thead><tr><th>Topic</th><th>Producers</th><th>Consumers</th></tr></thead>
+          <tbody>
+            <tr><td><code>dinecore.orders</code></td><td>order-service</td><td>billing-service</td></tr>
+            <tr><td><code>dinecore.menu</code></td><td>menu-service</td><td>menu-service cache invalidation on other instances</td></tr>
+            <tr><td><code>dinecore.billing</code></td><td>billing-service</td><td>order-service (close table)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>{
+  "eventId": "uuid",
+  "eventType": "OrderSubmitted",
+  "occurredAt": "2026-09-28T12:00:00Z",
+  "organizationId": "uuid",
+  "tenantId": "uuid",
+  "payload": {}
+}</code></pre>
+        <table>
+          <thead><tr><th>eventType</th><th>When</th><th>Payload must include</th></tr></thead>
+          <tbody>
+            <tr><td><code>OrderSubmitted</code></td><td>waiter submits</td><td>orderId, tableNumber, waiterId, items</td></tr>
+            <tr><td><code>OrderReady</code></td><td>kitchen finishes</td><td>orderId, waiterId</td></tr>
+            <tr><td><code>OrderServed</code></td><td>waiter marks served</td><td>full priced lines, so billing can create a cheque without reading order tables</td></tr>
+            <tr><td><code>OrderCancelled</code></td><td>cancel after submit</td><td>orderId, reason</td></tr>
+            <tr><td><code>MenuChanged</code></td><td>dish, category, or override write</td><td>organizationId, branchId or null if the whole catalog changed</td></tr>
+            <tr><td><code>ChequePaid</code></td><td>cheque fully paid</td><td>orderId, chequeId, tableId</td></tr>
+          </tbody>
+        </table>
+        <p>Consumers store <code>eventId</code> and skip repeats. Tenant id is taken from the envelope, never from a leftover thread-local.</p>
+      </section>
+
+      <section id="data">
+        <h2>8. Persistence rules</h2>
+        <ul>
+          <li>Branch-owned tables have <code>branch_id NOT NULL</code>. Organization catalog tables have <code>organization_id NOT NULL</code> and no <code>branch_id</code>.</li>
+          <li>Composite indexes: <code>orders (branch_id, status)</code>, unique <code>(branch_id, table_number)</code>, unique override <code>(branch_id, dish_id)</code>, <code>cheque (branch_id, status)</code>, unique <code>processed_event (event_id)</code>.</li>
+          <li>Foreign keys stay inside one schema. Cross-service references are UUID columns without a database foreign key.</li>
+          <li>HikariCP pool per service, about 10 connections each.</li>
+          <li>Optimistic locking (<code>@Version</code>) on <code>Order</code> and <code>Cheque</code>.</li>
+        </ul>
+      </section>
+
+      <section id="errors">
+        <h2>9. Errors and headers</h2>
+        <pre><code>{
+  "code": "ORDER_STATE",
+  "message": "Cannot submit an empty order",
+  "traceId": "same as X-Request-Id"
+}</code></pre>
+        <table>
+          <thead><tr><th>HTTP</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td>400</td><td>Validation, illegal state change, empty submit, overpayment</td></tr>
+            <tr><td>401</td><td>Missing or bad token</td></tr>
+            <tr><td>403</td><td>Role or tenant mismatch</td></tr>
+            <tr><td>404</td><td>Id not found in this tenant. Do not reveal that it exists in another tenant</td></tr>
+            <tr><td>409</td><td>Version conflict or duplicate username / table number</td></tr>
+          </tbody>
+        </table>
+        <p>Header names: <code>Authorization</code>, <code>X-Tenant-ID</code>, <code>X-Request-Id</code>.</p>
+      </section>
+
+      <section id="phases">
+        <h2>10. What to do, in order</h2>
+        <p>Each phase ends with <code>./mvnw test</code> green and the acceptance checks below. Do not start a later phase by stubbing its database inside an earlier service.</p>
+
+        <article class="phase">
+          <h3>Phase 0 — Repository skeleton</h3>
+          <ul>
+            <li>Parent POM, Java 21, dependency management for Boot and Cloud.</li>
+            <li>Modules listed in section 3, each with a bootable application class and a health endpoint.</li>
+            <li><code>docker-compose.yml</code> for Postgres, Redis, and Kafka.</li>
+          </ul>
+          <p class="done">Done when <code>docker compose up -d</code> brings the infrastructure up, and each service answers <code>/actuator/health</code>.</p>
+        </article>
+
+        <article class="phase">
+          <h3>Phase 1 — Identity and gateway</h3>
+          <ul>
+            <li><code>dinecore-common</code> and <code>dinecore-tenant-web</code>.</li>
+            <li>Flyway schema <code>tenant</code>.</li>
+            <li>Login, organizations, branches, settings, users, shifts.</li>
+            <li>Gateway route and JWT checks from sections 4 and 6.1.</li>
+            <li>Seed one organization, two branches, one user of each role (dev profile only).</li>
+          </ul>
+          <p class="done">Done when a waiter token cannot create an organization, a waiter of branch A with branch B’s header receives 403, and branch A settings are not returned to a user of B.</p>
+        </article>
+
+        <article class="phase">
+          <h3>Phase 2 — Menu</h3>
+          <ul>
+            <li>Flyway schema <code>menu</code>.</li>
+            <li>Catalog CRUD, branch override, <code>GET /api/v1/menu</code>.</li>
+            <li>Redis cache and <code>MenuChanged</code> invalidation.</li>
+            <li>Integration test with Redis (Testcontainers).</li>
+          </ul>
+          <p class="done">Done when changing an override changes the next menu read for that branch only, and the other branch still sees its own price.</p>
+        </article>
+
+        <article class="phase">
+          <h3>Phase 3 — Orders and kitchen channel</h3>
+          <ul>
+            <li>Flyway schema <code>orders</code>.</li>
+            <li>Tables, draft items, submit, kitchen ready, served, cancel.</li>
+            <li>HTTP client to menu-service for the price snapshot.</li>
+            <li>STOMP topics and JWT on connect.</li>
+            <li>Publish <code>OrderSubmitted</code>, <code>OrderReady</code>, <code>OrderServed</code>, <code>OrderCancelled</code>.</li>
+          </ul>
+          <p class="done">Done when an empty submit returns 400 and publishes nothing, a kitchen subscriber for that branch receives the order, the other branch cannot subscribe, and the item price stays at the submit-time price after a later override.</p>
+        </article>
+
+        <article class="phase">
+          <h3>Phase 4 — Billing</h3>
+          <ul>
+            <li>Flyway schema <code>billing</code>.</li>
+            <li>Consume <code>OrderServed</code>, open cheque, take split payments, void, Z-report.</li>
+            <li>Call order-service to lock the table and to close it.</li>
+            <li>Idempotent consumer.</li>
+          </ul>
+          <p class="done">Done when the same <code>OrderServed</code> twice creates one cheque, two payments that sum to the total free the table, overpayment returns 400, and a Z-report for shift A excludes shift B.</p>
+        </article>
+
+        <article class="phase">
+          <h3>Phase 5 — Hardening</h3>
+          <ul>
+            <li>Structured JSON logs with <code>traceId</code> and <code>tenantId</code>.</li>
+            <li>Prometheus metrics via Actuator.</li>
+            <li>Gateway request logging.</li>
+            <li>A short local-run note, written only when the commands are real.</li>
+          </ul>
+          <p class="done">Done when one path works through the gateway: login, read menu, open table, add item, submit, mark ready, mark served, pay cash, read the Z-report.</p>
+        </article>
+      </section>
+
+      <section id="tests">
+        <h2>11. Tests required</h2>
+        <p>Use JUnit 5. Use Testcontainers for PostgreSQL, and for Redis and Kafka in the modules that need them. Do not mock the database in tenant-isolation tests.</p>
+        <table>
+          <thead><tr><th>Test</th><th>Where</th></tr></thead>
+          <tbody>
+            <tr><td>Branch A cannot read or update branch B rows</td><td>each business service</td></tr>
+            <tr><td>Role denied by Spring Security</td><td>each protected endpoint group</td></tr>
+            <tr><td>Illegal order transition</td><td>order-service</td></tr>
+            <tr><td>Empty submit does not publish</td><td>order-service</td></tr>
+            <tr><td>Price snapshot</td><td>order-service</td></tr>
+            <tr><td>Cheque idempotency and overpayment</td><td>billing-service</td></tr>
+            <tr><td>Cache key deleted on override</td><td>menu-service</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="path">
+        <h2>12. Happy path</h2>
+        <ol>
+          <li>Super admin creates organization “Bishkek Group”, branches <code>bishkek-01</code> and <code>bishkek-02</code>, a branch admin, a waiter, and a kitchen user for branch 01.</li>
+          <li>Super admin creates category “Hot” and dish “Lagman” at base price 450.00.</li>
+          <li>Branch admin of branch 01 sets override price 480.00.</li>
+          <li>Waiter of branch 01 opens table 4, adds two Lagman, submits.</li>
+          <li>Kitchen display subscribed to <code>/topic/branch/{branch01}/kitchen</code> shows the ticket.</li>
+          <li>Kitchen marks items ready. Waiter marks served.</li>
+          <li>Billing opens a cheque: subtotal 960.00, plus tax and service charge from branch 01 settings.</li>
+          <li>Waiter records cash for the full total. Table 4 becomes <code>AVAILABLE</code>. Order becomes <code>CLOSED</code>.</li>
+          <li>Waiter of branch 02 never sees the order, the cheque, or the override.</li>
+        </ol>
+      </section>
+
+      <section id="risks">
+        <h2>13. Risks to watch during implementation</h2>
+        <table>
+          <thead><tr><th>Risk</th><th>What to do</th></tr></thead>
+          <tbody>
+            <tr><td>Tenant context leaking across requests on a pooled thread</td><td>Clear the thread-local in a <code>finally</code> block</td></tr>
+            <tr><td>Kafka listener using the HTTP tenant context</td><td>Pass <code>tenantId</code> only inside the event</td></tr>
+            <tr><td>Gateway and MVC filters drifting apart</td><td>Keep the header name and mismatch rule as shared constants, with tests</td></tr>
+            <tr><td>Shared database creeping back</td><td>Reject a JPA entity that maps another service’s schema</td></tr>
+            <tr><td>Double submit from a double tap</td><td>Submit of an order already past <code>DRAFT</code> returns the current order and does not publish again</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="sources">
+        <h2>14. Source notes and how they map</h2>
+        <table>
+          <thead><tr><th>Existing file</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr><td><code>dinecore_brand_profile_and_investor_pitch.md</code></td><td>Product context only. Market and fundraising text is not a build requirement</td></tr>
+            <tr><td><code>system_architecture_and_multi_tenancy.md</code></td><td>Tenant header flow. Implemented as section 4, with the JWT match rule added</td></tr>
+            <tr><td><code>core_microservices_breakdown.md</code></td><td>Service list. <code>tenant-service</code> from the longer spec is included</td></tr>
+            <tr><td><code>multi_tenant_restaurant_system_technical_specification.md</code></td><td>Entities, roles, cache key, kitchen topics, cheque and Z-report. Adapted to schema-per-service</td></tr>
+            <tr><td><code>java_implementation_code_snippets.md</code></td><td>Rejected as implementation. See section 2</td></tr>
+          </tbody>
+        </table>
+        <p>Pitch scale (50+ sites, 150+ waiters) is a later target. This specification builds the 5–10 branch system those notes can run on without a second rewrite of service boundaries.</p>
+      </section>
+
+      <footer>
+        DineCore implementation specification, version 1.0. Same text as the Markdown file in this folder.
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

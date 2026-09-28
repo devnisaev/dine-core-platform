@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: tenant-api
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/organizations/**,/api/v1/branches/**,/api/v1/users/**,/api/v1/settings/**,/api/v1/shifts/**
+            - id: menu-api
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/categories/**,/api/v1/dishes/**,/api/v1/menu/**
+            - id: order-api
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/v1/tables/**,/api/v1/orders/**,/ws/**
+            - id: billing-api
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/v1/cheques/**,/api/v1/reports/**
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins: "http://localhost:5173"
+                allowed-methods: "*"
+                allowed-headers: "*"
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+dinecore:
+  jwt:
+    secret: dinecore-dev-secret-change-me-32b
+    ttl-seconds: 3600

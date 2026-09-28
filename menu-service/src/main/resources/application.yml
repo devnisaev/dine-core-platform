@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: menu-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dinecore
+    username: dinecore
+    password: dinecore
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: menu
+  flyway:
+    schemas: menu
+    default-schema: menu
+    create-schemas: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+dinecore:
+  jwt:
+    secret: dinecore-dev-secret-change-me-32b
+    ttl-seconds: 3600
+  menu:
+    cache: redis

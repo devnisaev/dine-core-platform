@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:tenant;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: public
+  flyway:
+    enabled: false
+
+dinecore:
+  jwt:
+    secret: dinecore-dev-secret-change-me-32b
+    ttl-seconds: 3600

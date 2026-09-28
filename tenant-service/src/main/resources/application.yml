@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: tenant-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dinecore
+    username: dinecore
+    password: dinecore
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: tenant
+  flyway:
+    schemas: tenant
+    default-schema: tenant
+    create-schemas: true
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+dinecore:
+  jwt:
+    secret: dinecore-dev-secret-change-me-32b
+    ttl-seconds: 3600
