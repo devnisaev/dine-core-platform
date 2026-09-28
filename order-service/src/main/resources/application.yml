@@ -1,6 +1,23 @@
 spring:
   application:
     name: order-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dinecore
+    username: dinecore
+    password: dinecore
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: orders
+  flyway:
+    schemas: orders
+    default-schema: orders
+    create-schemas: true
+  kafka:
+    bootstrap-servers: localhost:9092
 
 server:
   port: 8083
@@ -10,3 +27,13 @@ management:
     web:
       exposure:
         include: health
+
+dinecore:
+  jwt:
+    secret: dinecore-dev-secret-change-me-32b
+    ttl-seconds: 3600
+  orders:
+    bus: kafka
+    menu: http
+    menu-url: http://localhost:8082
+    topics: stomp

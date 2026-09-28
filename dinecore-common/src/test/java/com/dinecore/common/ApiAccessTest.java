@@ -74,6 +74,25 @@ class ApiAccessTest {
         assertEquals("FORBIDDEN", ApiAccess.decide("PUT", path, "WAITER", branchA(), branchA()).code());
     }
 
+    @Test
+    void waiterCannotCreateATable() {
+        assertEquals("FORBIDDEN", ApiAccess.decide("POST", "/api/v1/tables", "WAITER", branchA(), branchA()).code());
+        assertEquals(AccessVerdict.Decision.ALLOW, ApiAccess.decide("POST", "/api/v1/tables", "BRANCH_ADMIN", branchA(), branchA()).decision());
+    }
+
+    @Test
+    void kitchenMarksReadyAndWaiterSubmits() {
+        String ready = "/api/v1/orders/" + branchA() + "/items/" + branchB() + "/ready";
+        assertEquals(AccessVerdict.Decision.ALLOW, ApiAccess.decide("POST", ready, "KITCHEN", branchA(), branchA()).decision());
+        assertEquals("FORBIDDEN", ApiAccess.decide("POST", ready, "WAITER", branchA(), branchA()).code());
+        assertEquals(AccessVerdict.Decision.ALLOW, ApiAccess.decide("POST", "/api/v1/orders", "WAITER", branchA(), branchA()).decision());
+    }
+
+    @Test
+    void orderCallForAnotherBranchIsRejected() {
+        assertEquals("TENANT_MISMATCH", ApiAccess.decide("GET", "/api/v1/orders", "WAITER", branchA(), branchB()).code());
+    }
+
     private static String branchA() {
         return "11111111-1111-1111-1111-111111111111";
     }

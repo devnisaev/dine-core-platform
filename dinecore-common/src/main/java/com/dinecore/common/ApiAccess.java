@@ -37,6 +37,9 @@ public final class ApiAccess {
         if (menuPath(path)) {
             return menuRole(method, path, role);
         }
+        if (orderPath(path)) {
+            return orderRole(method, path, role);
+        }
         return known(role) && futureApi(path);
     }
 
@@ -65,6 +68,33 @@ public final class ApiAccess {
     private static boolean menuPath(String path) {
         return path.startsWith("/api/v1/menu") || path.startsWith("/api/v1/categories")
                 || path.startsWith("/api/v1/dishes");
+    }
+
+    private static boolean orderPath(String path) {
+        return path.startsWith("/api/v1/tables") || path.startsWith("/api/v1/orders");
+    }
+
+    private static boolean orderRole(String method, String path, String role) {
+        if (path.startsWith("/api/v1/tables")) {
+            return tableRole(method, role);
+        }
+        if (path.endsWith("/ready")) {
+            return "POST".equals(method) && is(role, Role.KITCHEN);
+        }
+        if (path.endsWith("/cancel")) {
+            return "POST".equals(method) && (is(role, Role.WAITER) || is(role, Role.BRANCH_ADMIN));
+        }
+        if ("GET".equals(method)) {
+            return known(role);
+        }
+        return "POST".equals(method) && is(role, Role.WAITER);
+    }
+
+    private static boolean tableRole(String method, String role) {
+        if ("POST".equals(method)) {
+            return is(role, Role.BRANCH_ADMIN);
+        }
+        return "GET".equals(method) && known(role);
     }
 
     private static boolean menuRole(String method, String path, String role) {
@@ -97,7 +127,8 @@ public final class ApiAccess {
 
     private static boolean needsHeader(String role, String path) {
         if (path.startsWith("/api/v1/settings") || path.startsWith("/api/v1/shifts")
-                || path.startsWith("/api/v1/menu") || path.endsWith("/override") || futureApi(path)) {
+                || path.startsWith("/api/v1/menu") || path.endsWith("/override")
+                || orderPath(path) || futureApi(path)) {
             return true;
         }
         return path.startsWith("/api/v1/users") && !is(role, Role.SUPER_ADMIN);
@@ -111,8 +142,7 @@ public final class ApiAccess {
     }
 
     private static boolean futureApi(String path) {
-        return path.startsWith("/api/v1/tables") || path.startsWith("/api/v1/orders")
-                || path.startsWith("/api/v1/cheques") || path.startsWith("/api/v1/reports")
+        return path.startsWith("/api/v1/cheques") || path.startsWith("/api/v1/reports")
                 || path.startsWith("/ws");
     }
 
